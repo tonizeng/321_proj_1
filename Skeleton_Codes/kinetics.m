@@ -1,61 +1,67 @@
-%% Project Skeleton Code
-
+%% The following code plots all kinetic equations
 clear; clc; close all;
 
 %% Part 2 - Force and Moment Calculation
+%% Lists to store calculated values for different parameters
+% Moment & Angle lists
+M12_list = []; % List to store moment M12 values
+theta2_list = []; % List to store angular positions of link 2 (theta2)
 
-%% initial parameter: unit: m, degree, rad/sec
+% Shaking Force & Moment
+Fs_list = [];  % List to store magnitudes of shaking forces
+Fs_alpha = []; % List to store angles (directions) of shaking forces
+Ms_list =[]; % List to store shaking moments
+
+% Force components acting at different joints
+F23_list = []; % List to store force between links 2 and 3
+F12_list = []; % List to store force between base 1 and link 2
+F34_list = []; % List to store force between links 3 and slider 4
+F16_list = []; % List to store force between base 1 and link 6
+F56_list = []; % List to store force between links 5 and 6
+F14_list = []; % List to store force between base 1 and link 4
+N35_list = []; % List to store normal force at slider 5
+
+% Angles corresponding to the forces
+F12_alpha = []; % Angle of force F12
+F23_alpha = []; % Angle of force F23
+F34_alpha = []; % Angle of force F34
+F16_alpha = []; % Angle of force F16
+F56_alpha = []; % Angle of force F56
+
+%% Givens / Initial Parameters 
+% Link Lengths (m)
 r1 = 0.084; 
 r2 = 0.36;
 r3 = 1.2;
 r6 = 0.6;
+
+% Link Masses (kg)
 m2 = 0.07634;
 m6 = 0.12723;
 m3 = 0.25447;
+
+% Slider Masses (kg)
 m4 = 5;
 m5 = 5;
+
+% Center of Gravity Distances (m)
 b2 = r2/2;
 b6 = r6/2;
 b3 = r3/2;
 
-M12_list = [];
-theta2_list = [];
-Fs_list = [];  % shaking force
-Fs_alpha = []; % direction of a shaking force
-Ms_list =[]; % Shaking moment
-%Forces list
-F23_list = [];
-F12_list = [];
-F34_list = [];
-F16_list = [];
-F56_list = [];
-F14_list = [];
-N35_list = [];
-%angles list
-F12_alpha = [];
-F23_alpha = [];
-F34_alpha = [];
-F16_alpha = [];
-F56_alpha = [];
+%Inertias
+inertiaG3 = (1/12)*m3.*r3.^2;
+inertiaA2 = (1/3)*m2.*r2.^2;
+inertiaA6 = (1/3)*m6.*r6.^2;
 
 for theta2 = 0:0.01:2*pi
 
-dtheta2 = 2;
-ddtheta2 = 0; 
-
-%% Part 1- Calculations for kinematic variables, caculated based on loop closure eqn
-
-%equations for kinematic values
+% Calculations of kinematic variables from Part 1
 theta3 = pi - asin((r2.*sin(theta2)-r1)./r3);
 r4 = r2.*cos(theta2) - r3.*cos(theta3);
-theta5 = theta3; % eqn 15
+theta5 = theta3;% eqn 15
 theta6 = pi - asin((r1.*cos(theta5)-r4.*sin(theta5))./r6) + theta5; %eqn 18
 r5 = (r6.*cos(theta6)-r4)./cos(theta5);
-
-%% Take time derivative of loop eqn (d/dt) 
-% and solve them for dtheta3, dtheta5 & dr6
-% and the same for the second derivatives. 
-% add r5dot, theta6dot, r5 double dot, theta6 double dot
 
 % First derivates of r4 and theta 3
 dtheta3 = (r2.*dtheta2.*cos(theta2))./(r3.*cos(theta3));
@@ -75,24 +81,23 @@ ddtheta5 = ddtheta3;
 ddtheta6 = ((-ddr4.*sin(theta5))+(2.*dr5.*dtheta5)+(r5.*ddtheta5)-(r6.*(dtheta6.^2).*sin(theta5-theta6)))./(r6.*cos(theta5-theta6));
 ddr5 = (((-2.*dr5.*dtheta5-r5.*ddtheta5).*cos(theta5))+(r5.*(dtheta5.^2).*sin(theta5))+(r6.*ddtheta6.*cos(theta6))-(r6.*(dtheta6.^2).*sin(theta6)))./(sin(theta5));
 
-a_coriolis = abs((2.*(r6.*dtheta6.*cos(theta6)-r5.*(dtheta5).*cos(theta5)).*(r2.*dtheta2.*cos(theta2)))./(r3.*cos(theta3).*sin(theta5)));
+% Theta 2
+dtheta2 = 2;
+ddtheta2 = 0; 
 
-%given parameters
-
+% Beta 3
 beta3 = 2*pi-theta3;
 dbeta3 = -1*dtheta3;
 ddbeta3 = -1*ddtheta3;
 
-%inertias
-inertiaG3 = (1/12)*m3.*r3.^2;
-inertiaA2 = (1/3)*m2.*r2.^2;
-inertiaA6 = (1/3)*m6.*r6.^2;
-
-%shortcuts
+% Shortcuts for Link Components 
 rGC = r5 - b3;
 rGB = r3./2;
 rDG = r3./2;
-%trig substitutions for the A matrix
+
+% Coefficients for the A matrix 
+% Naming convention of the coefficients follows the x,y coordinates of the
+% location in the A matrix
 A33 = -r2.*sin(theta2);
 A43 = r2.*cos(theta2);
 A134 = -sin(beta3);
@@ -107,7 +112,7 @@ A56 = -rDG.*sin(beta3);
 A99 = -r6.*sin(theta6);
 A109 = r6.*(cos(theta6));
 
-%accelerations for forces
+% Acceleration Equations for Forces
 ag2x = b2.*-(dtheta2.^2).*cos(theta2);
 ag2y = b2.*-(dtheta2.^2).*sin(theta2);
 
@@ -123,8 +128,8 @@ ag4y = 0;
 ag5x = ag6x.*2;
 ag5y = ag6y.*2;
 
-% and so on    
 
+% B Vector
     B = [m2.*ag2x;
         m2.*ag2y;
         0;
@@ -140,6 +145,7 @@ ag5y = ag6y.*2;
         0;
     ];
     
+% A Matrix
     A = [
     -1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0;
     0, -1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0;
@@ -177,7 +183,7 @@ ag5y = ag6y.*2;
     N35 = x(13);
     Fsx = F12x + F16x;
     Fsy = F14y + F12y + F16y;
-    Ms = M12 + F14y.*r4;
+    Ms = -M12 + F14y.*r4;
     
     % Magnitudes of all forces: 
     % Atan is defined on [-pi/2; pi/2]. 

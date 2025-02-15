@@ -12,7 +12,7 @@ Fs_list = [];  % List to store magnitudes of shaking forces
 Fs_alpha = []; % List to store angles (directions) of shaking forces
 Ms_list =[]; % List to store shaking moments
 
-% Force components acting at different joints
+% Initialization orce components acting at different joints
 F23_list = []; % List to store force between links 2 and 3
 F12_list = []; % List to store force between base 1 and link 2
 F34_list = []; % List to store force between links 3 and slider 4
@@ -54,6 +54,10 @@ inertiaG3 = (1/12)*m3.*r3.^2;
 inertiaA2 = (1/3)*m2.*r2.^2;
 inertiaA6 = (1/3)*m6.*r6.^2;
 
+% Theta 2
+dtheta2 = 2;
+ddtheta2 = 0; 
+
 for theta2 = 0:0.01:2*pi
 
 % Calculations of kinematic variables from Part 1
@@ -80,10 +84,6 @@ dr5 = ((r6.*dtheta6.*cos(theta6))-(r5.*dtheta5.*cos(theta5)))./(sin(theta5));
 ddtheta5 = ddtheta3;
 ddtheta6 = ((-ddr4.*sin(theta5))+(2.*dr5.*dtheta5)+(r5.*ddtheta5)-(r6.*(dtheta6.^2).*sin(theta5-theta6)))./(r6.*cos(theta5-theta6));
 ddr5 = (((-2.*dr5.*dtheta5-r5.*ddtheta5).*cos(theta5))+(r5.*(dtheta5.^2).*sin(theta5))+(r6.*ddtheta6.*cos(theta6))-(r6.*(dtheta6.^2).*sin(theta6)))./(sin(theta5));
-
-% Theta 2
-dtheta2 = 2;
-ddtheta2 = 0; 
 
 % Beta 3
 beta3 = 2*pi-theta3;
@@ -162,13 +162,10 @@ ag5y = ag6y.*2;
     0, 0, 0, 0, 0, 1, 0, 0, 0, 0, -1, 0, 0;
     ];
 
-    x = A\B; % Ax = B, solution for x; note that in MATLAB: A\B = B/A
+    x = A\B; % Ax = B, solution for x;
     
     
-    % M12:
-    M12 = x(12);
-    M12_list = [M12_list; abs(M12)];
-    
+    % Force & Moment Results from Solving the Matrix
     F12x = x(1);
     F12y = x(2);
     F23x = x(3);
@@ -180,28 +177,26 @@ ag5y = ag6y.*2;
     F56x = x(9);
     F56y = x(10);
     F14y = x(11);
+    M12 = x(12);
     N35 = x(13);
     Fsx = F12x + F16x;
     Fsy = F14y + F12y + F16y;
     Ms = -M12 + F14y.*r4;
-    
-    % Magnitudes of all forces: 
-    % Atan is defined on [-pi/2; pi/2]. 
-    % This if clause will help to adjust the value of the angle 
-    % to its true value:	
+
+    % Store Force & Moment Magnitudes into List
     F23_list = [F23_list; sqrt(F23x.^2+F23y.^2)];
     F12_list = [F12_list; sqrt(F12x.^2+F12y.^2)];
     F34_list = [F34_list; sqrt(F34x.^2+F34y.^2)];
     F16_list = [F16_list; sqrt(F16x.^2+F16y.^2)];
     F56_list = [F56_list; sqrt(F56x.^2+F56y.^2)];
     F14_list = [F14_list; abs(F14y)];
+    M12_list = [M12_list; abs(M12)];
     N35_list = [N35_list; abs(N35)];
     Fs_list = [Fs_list; sqrt(Fsx.^2+Fsy.^2)];
     Ms_list = [Ms_list; abs(Ms)];
 
-
-    % Directions of all forces:   
-    %F23
+    % Directions of Forces & Moment:   
+    % F23
     fx = F23x;
     fy = F23y;
     alpha_23 = atan(fy/fx);
@@ -210,7 +205,7 @@ ag5y = ag6y.*2;
     end 
     F23_alpha = [F23_alpha; alpha_23];
 
-    %F12
+    % F12
     fx = F12x;
     fy = F12y;
     alpha_12 = atan2(fy, fx);
@@ -219,7 +214,7 @@ ag5y = ag6y.*2;
     end 
     F12_alpha = [F12_alpha; alpha_12];
 
-    %F34
+    % F34
     fx = F34x;
     fy = F34y;
     alpha_34 = atan(fx\fy);
@@ -228,7 +223,7 @@ ag5y = ag6y.*2;
     end 
     F34_alpha = [F34_alpha; alpha_34];
 
-    %F16
+    % F16
     fx = F16x;
     fy = F16y;
     alpha_16 = atan(fx\fy);
@@ -237,7 +232,7 @@ ag5y = ag6y.*2;
     end 
     F16_alpha = [F16_alpha; alpha_16];
 
-    %F56
+    % F56
     fx = F56x;
     fy = F56y;
     alpha_56 = atan(fx\fy);
@@ -246,7 +241,7 @@ ag5y = ag6y.*2;
     end 
     F56_alpha = [F56_alpha; alpha_56];
 
-    %Fs
+    % Fs
     fx = Fsx;
     fy = Fsy;
     alpha_s = atan(fx\fy);
@@ -258,20 +253,11 @@ ag5y = ag6y.*2;
   
     % Collecting the values of theta2:
     theta2_list = [theta2_list; theta2];
-     
-    
-    
 end
 
-
-% Regular and Polar plots:
-% Might have to transpose the Force vectors for polar plot. Do so if needed
-% Polar plot only works with radians so will have to do it accordingly
-%M12_list = M12_list(:);
-
-%Regular Plots
-%M12 Regular
-subplot(3,3,1);
+% Plots
+% M12 
+subplot(3,4,1);
 plot(theta2_list.*(180/pi), M12_list)
 grid on;
 title('M_{12} vs \theta_2')
@@ -281,8 +267,8 @@ xlim([0, 360])
 xticks(0:90:360) 
 hold on;
 
-%F23 Regular
-subplot(3,3,2);
+% F23 
+subplot(3,4,2);
 plot(theta2_list.*(180/pi),F23_list)
 grid on;
 title('F_{23} vs \theta_2')
@@ -292,8 +278,8 @@ xlim([0, 360])
 xticks(0:90:360) 
 hold on;
 
-%F12 Regular
-subplot(3,3,3);
+% F12 
+subplot(3,4,3);
 plot(theta2_list.*(180/pi), F12_list)
 grid on;
 title('F_{12} vs \theta_2')
@@ -303,8 +289,8 @@ xlim([0, 360])
 xticks(0:90:360) 
 hold on;
 
-%F34 Regular
-subplot(3,3,4);
+% F34 
+subplot(3,4,4);
 plot(theta2_list.*(180/pi), F34_list)
 grid on;
 title('F_{34} vs \theta_2')
@@ -314,8 +300,8 @@ xlim([0, 360])
 xticks(0:90:360) 
 hold on;
 
-%F16 Regular
-subplot(3,3,5);
+% F16 
+subplot(3,4,5);
 plot(theta2_list.*(180/pi), F16_list)
 grid on;
 title('F_{16} vs \theta_2')
@@ -325,8 +311,8 @@ xlim([0, 360])
 xticks(0:90:360) 
 hold on;
 
-%F56 Regular
-subplot(3,3,6);
+% F56 
+subplot(3,4,6);
 plot(theta2_list.*(180/pi), F56_list)
 grid on;
 title('F_{56} vs \theta_2')
@@ -336,8 +322,8 @@ xlim([0, 360])
 xticks(0:90:360) 
 hold on;
 
-%F14 Regular
-subplot(3,3,7);
+% F14 
+subplot(3,4,7);
 plot(theta2_list.*(180/pi), F14_list)
 grid on;
 title('F_{14} vs \theta_2')
@@ -347,8 +333,8 @@ xlim([0, 360])
 xticks(0:90:360) 
 hold on;
 
-%F35 Regular
-subplot(3,3,8);
+% F35 
+subplot(3,4,8);
 plot(theta2_list.*(180/pi), N35_list)
 grid on;
 title('F_{35} vs \theta_2')
@@ -358,9 +344,8 @@ xlim([0, 360])
 xticks(0:90:360) 
 hold on
 
-%shaking moment and forces
-figure(2);
-subplot(2,1,1)
+% Shaking Force Fs
+subplot(3,4,9);
 plot(theta2_list.*(180/pi), Fs_list)
 grid on
 title('F_{s} vs \theta_2')
@@ -370,7 +355,8 @@ xlim([0, 360])
 xticks(0:90:360) 
 hold on
 
-subplot(2,1,2)
+% Shaking Moment Ms
+subplot(3,4,10);
 plot(theta2_list.*(180/pi), Ms_list)
 grid on
 title('M_{s} vs \theta_2')
